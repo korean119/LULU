@@ -18,36 +18,48 @@ function getData(url) {
 function newsFeed() {
   const newsFeed = getData(NEWS_URL);
   const newsList = [];
+  let template = `
+  <div class="container mx-auto p-4 dark:bg-slate-300">
+    <h1>조니의 영차영차 피드</h1>
+    <ul>
+    {{__news_feed__}}
+    </ul>
+    <div>
+    <a href="#/page/{{__룰루_page__}}">이전 페이지</a>
+    <a href="#/page/{{__랄라_page__}}">다음 페이지</a></div>
+  </div>
+  `;
 
   newsList.push("<ul>");
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     newsList.push(`
   <li>
-    <a href="#${newsFeed[i].id}">
+    <a href="#/show/${newsFeed[i].id}">
     ${newsFeed[i].title} (${newsFeed[i].comments_count})
     </a>
   </li>
 `);
-
-    newsList.push("</ul>");
-    newsList.push(
-      '<div><a href="#/page/${store.currentPage}">다음 페이지</a></div>'
-    );
-
-    container.innerHTML = newsList.join("");
   }
+
+  template = template.replace("{{__news_feed__}}", newsList.join(""));
+  template = template.replace(
+    "{{__룰루_page__}}",
+    store.currentPage > 1 ? store.currentPage - 1 : 1
+  );
+  template = template.replace("{{__랄라_page__}}", store.currentPage + 1);
+  container.innerHTML = template;
 }
 
 function newsDetail() {
-  const id = location.hash.substr(1);
+  const id = location.hash.substr(7);
   const newsContent = getData(CONTENT_URL.replace("@id", id));
 
   container.innerHTML = `
-  <h1>${newsContent.title}</h1>
+  <h1 class="dark:bg-slate-300">${newsContent.title}</h1>
 
   <div>
-    <a href="#">목록으로</a>
+    <a href="#/page/${store.currentPage}" class=dark:bg-slate-100>목록으로</a>
   </div>
   `;
 }
@@ -57,6 +69,9 @@ function router() {
 
   if (routePath === "") {
     newsFeed();
+  } else if (routePath.indexOf("#/page/") >= 0) {
+    store.currentPage = Number(routePath.substr(7));
+    newsFeed();
   } else {
     newsDetail();
   }
@@ -65,6 +80,3 @@ function router() {
 window.addEventListener("hashchange", router);
 
 router();
-
-// 브랜치 커밋 확인
-// 커밋 테스토
