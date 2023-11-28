@@ -3,11 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HN clinet</title>
+    <title>HN client</title>
   </head>
+  <script src="https://cdn.tailwindcss.com"></script>
+
   <body>
-    <noscript> you dwqdqwdqwdqw. </noscript>
-    <div id="root"></div>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              clifford: "#da373d",
+            },
+          },
+        },
+      };
+    </script>
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .content-auto {
+          content-visibility: auto;
+        }
+      }
+    </style>
+    <div class="lg:content-auto" id="root"></div>
     <script src="app.js" type="module"></script>
   </body>
 </html>
