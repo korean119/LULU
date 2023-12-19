@@ -27,7 +27,7 @@ interface NewsComment extends News {
   level: number;
 }
 
-interface Routeinfo {
+interface Routerinfo {
   path: string;
   page: View;
 }
@@ -62,24 +62,17 @@ class Api {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class NewsFeedApi {
+class NewsFeedApi extends Api {
   getData(): NewsFeed[] {
     return this.getRequest<NewsFeed[]>(NEWS_URL);
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class NewsDetailApi {
+class NewsDetailApi extends Api {
   getData(id: string): NewsDetail {
     return this.getRequest<NewsDetail>(CONTENT_URL.replace('@id', id));
   }
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface NewsFeedApi extends Api {}
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-interface NewsDetailApi extends Api {}
 
 applyApiMixins(NewsFeedApi, [Api]);
 applyApiMixins(NewsDetailApi, [Api]);
@@ -102,35 +95,35 @@ abstract class View {
     this.htmlList = [];
   }
 
-  updateView(): void {
-    this.container.innerHTML = this.template = this.renderTemplate;
+  protected updateView(): void {
+    this.container.innerHTML = this.renderTemplate;
     this.renderTemplate = this.template;
   }
 
-  addHtml(htmlString: string): void {
+  protected addHtml(htmlString: string): void {
     this.htmlList.push(htmlString);
   }
 
-  getHtml(): string {
+  protected getHtml(): string {
     const snapshot = this.htmlList.join('');
     this.clearHtmlList();
     return snapshot;
   }
 
-  setTemplateData(key: string, value: string): void {
-    this.renderTemplate = this.template = this.template.replace(`{{__${key}__}}`, value);
+  protected setTemplateData(key: string, value: string): void {
+    this.renderTemplate = this.renderTemplate.replace(`{{__${key}__}}`, value);
   }
 
-  clearHtmlList(): void {
-    this.container.innerHTML = '';
+  private clearHtmlList(): void {
+    this.htmlList = [];
   }
 
   abstract render(): void;
 }
 
 class Router {
-  routeTable: Routeinfo[];
-  defaultRoute: Routeinfo | null;
+  routeTable: Routerinfo[];
+  defaultRoute: Routerinfo | null;
 
   constructor() {
     window.addEventListener('hashchange', this.route.bind(this));
@@ -215,23 +208,21 @@ class NewsFeedView extends View {
 
   render(): void {
     store.currentPage = Number(location.hash.substr(7) || 1);
-
     for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
       const { id, title, comments_count, user, points, time_ago, read } = this.feeds[i];
       this.addHtml(
-        `
-    <div class='p-6 ${
-      !read ? 'bg-white' : 'bg-red-500'
-    }' mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100 dark:bg-slate-100 dark:hover:bg-slate-200'>
+        `    <div class='p-6 ${
+          read ? 'bg-white' : 'bg-red-100'
+        }' mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100 dark:bg-slate-100 dark:hover:bg-slate-200'>
       <div class='flex'>
       <div class='flex-auto'>
           <a href='#/show/${id}'>${title}</a>
       </div>
         <div class='text-center text-sm'>
         <div class='w-10 text-white bg-green-300 rounded-lg px-0 py-2'>${comments_count}
-    </div>
-    </div>
-    </div>
+        </div>
+        </div>
+        </div>
         <div class='flex mt-3'>
         <div class='grid grid-cols-3 text-sm text-gray-500'>
         <div><i class='fas fa-user mr-1'></i>${user}</div>
@@ -243,6 +234,10 @@ class NewsFeedView extends View {
 `
       );
     }
+    this.setTemplateData('news_feed', this.getHtml());
+    this.setTemplateData('룰루_page', String(store.currentPage));
+    this.setTemplateData('랄라_page', String(store.currentPage + 1));
+    this.updateView();
   }
 }
 
@@ -265,9 +260,10 @@ class NewsDetailView extends View {
 </div>
 </div>
     <div class='h-full border rounded-xl bg-white m-6 p-4 '>
-        <h2>{{title}}</h2>
-    <div class='text-gray-400 h-20'>{{__content__}
-</div>{{__comments__}}
+        <h2>{{__title__}}</h2>
+    <div class='text-gray-400 h-20'>
+        {{__content__}}
+        </div>{{__comments__}}
   `;
 
     super(containerId, template);
@@ -308,7 +304,7 @@ class NewsDetailView extends View {
       </div>
       `
       );
-      if (comments[i].comments.length > 0) {
+      if (comment.comments.length > 0) {
         this.addHtml(this.makeComment(comment.comments));
       }
     }
