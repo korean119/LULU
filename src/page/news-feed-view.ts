@@ -1,6 +1,6 @@
 import View from '../core/view';
 import { NewsFeedApi } from '../core/api';
-import { NewsFeed } from '../types';
+import { NewsStore, NewsFeed } from '../types';
 import { NEWS_URL } from '../config';
 
 const template: string = `
@@ -29,35 +29,31 @@ const template: string = `
 
 export default class NewsFeedView extends View {
   private api: NewsFeedApi;
-  private feeds: NewsFeed[];
+  private store: NewsStore;
 
-  constructor(containerId: string) {
+  constructor(containerId: string, store: NewsStore) {
     super(containerId, template);
 
+    this.store = store;
     this.api = new NewsFeedApi(NEWS_URL);
-    this.feeds = window.store.feeds;
-
-    if (this.feeds.length === 0) {
-      this.feeds = window.store.feeds = this.api.getData();
-      this.makeFeeds();
-    }
-
-    this.setTemplateData('news_feed', this.getHtml());
-    this.setTemplateData('룰루_page', String(window.store.currentPage));
-    this.setTemplateData('랄라_page', String(window.store.currentPage + 1));
-    this.updateView();
-  }
-
-  private makeFeeds(): void {
-    for (let i = 0; i < this.feeds.length; i++) {
-      this.feeds[i].read = false;
-    }
   }
 
   render(): void {
-    window.store.currentPage = Number(location.hash.substr(7) || 1);
-    for (let i = (window.store.currentPage - 1) * 10; i < window.store.currentPage * 10; i++) {
-      const { id, title, comments_count, user, points, time_ago, read } = this.feeds[i];
+    this.store.currentPage = Number(location.hash.substr(7) || 1);
+
+    if (!this.store.hasFeeds) {
+      this.api.getDataWithPromise((feeds: NewsFeed[]) => {
+        this.store.setFeeds(feeds);
+        this.renderView();
+      });
+    }
+    this.renderView();
+  }
+
+  renderView = (): void => {
+    for (let i = (this.store.currentPage - 1) * 10; i < this.store.currentPage * 10; i++) {
+      const { id, title, comments_count, user, points, time_ago, read } = this.store.getFeed(i);
+
       this.addHtml(
         `    <div class='p-6 ${
           read ? 'bg-white' : 'bg-red-100'
@@ -83,8 +79,9 @@ export default class NewsFeedView extends View {
       );
     }
     this.setTemplateData('news_feed', this.getHtml());
-    this.setTemplateData('룰루_page', String(window.store.currentPage));
-    this.setTemplateData('랄라_page', String(window.store.currentPage + 1));
+    this.setTemplateData('룰루_page', String(this.store.prevPage));
+    this.setTemplateData('랄라_page', String(this.store.nextPage));
+
     this.updateView();
-  }
+  };
 }

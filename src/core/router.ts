@@ -1,5 +1,5 @@
 import { Routerinfo } from '../types';
-import View from '../core/view';
+import View from './view';
 
 export default class Router {
   routeTable: Routerinfo[];
