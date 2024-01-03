@@ -2,6 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "target": "ES2015",
+    "lib": ["es6", "dom"],
     "module": "commonjs",
     "alwaysStrict": true,
     "noImplicitAny": true,
